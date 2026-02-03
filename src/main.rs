@@ -18,7 +18,7 @@ struct Cli {
     algo: AlgorithmArg,
 
     /// Target hash in hex (required unless --batch is provided)
-    #[arg(short, long)]
+    #[arg(short = 'H', long)]
     hash: Option<String>,
 
     /// Optional file name to shortcut scanning
