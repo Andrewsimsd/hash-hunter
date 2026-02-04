@@ -9,35 +9,59 @@ use clap::{Parser, ValueEnum};
 #[command(
     name = "hash-hunter",
     version,
-    about = "Find files by matching hashes."
+    about = "Find files by matching hashes.",
+    long_about = "Hash Hunter scans a directory tree and compares file digests against one or more target hashes. \
+It supports multiple hashing algorithms, optional filename hints, and batch matching for large lists of targets.",
+    after_help = "EXAMPLES:\n  \
+  # Find a file matching a SHA-256 digest\n  \
+  hash-hunter -H 0123deadbeef... -a sha256 -d /data\n\n  \
+  # Use a filename hint to skip hashing unrelated files\n  \
+  hash-hunter -H 0123deadbeef... -n report.pdf\n\n  \
+  # Batch mode: each line is <hash> [filename]\n  \
+  hash-hunter --batch hashes.txt --algo sha1 --threads 8\n\n  \
+  # Write results to a file while also printing to stdout\n  \
+  hash-hunter -H 0123deadbeef... --output results.txt\n\nBATCH FORMAT:\n  \
+  <hex_hash>[<space>filename]\n  \
+  The filename is optional; when provided, it is used as a hint to short-circuit scanning."
 )]
 struct Cli {
     /// Root directory to search
-    #[arg(short, long, default_value = ".")]
+    #[arg(short, long, default_value = ".", value_name = "PATH")]
     dir: PathBuf,
 
     /// Hash algorithm to use
-    #[arg(short, long, value_enum, default_value_t = AlgorithmArg::Sha256)]
+    #[arg(
+        short,
+        long,
+        value_enum,
+        default_value_t = AlgorithmArg::Sha256,
+        value_name = "ALGO"
+    )]
     algo: AlgorithmArg,
 
     /// Target hash in hex (required unless --batch is provided)
-    #[arg(short = 'H', long)]
+    #[arg(
+        short = 'H',
+        long,
+        value_name = "HEX",
+        required_unless_present = "batch"
+    )]
     hash: Option<String>,
 
     /// Optional file name to shortcut scanning
-    #[arg(short, long)]
+    #[arg(short, long, value_name = "NAME")]
     name: Option<String>,
 
     /// Batch file with lines: <hash> [filename]
-    #[arg(long)]
+    #[arg(long, value_name = "FILE")]
     batch: Option<PathBuf>,
 
     /// Number of hashing threads (defaults to logical CPUs)
-    #[arg(long)]
+    #[arg(long, value_name = "N")]
     threads: Option<usize>,
 
     /// Write results to a text file at the given path
-    #[arg(long)]
+    #[arg(long, value_name = "FILE")]
     output: Option<PathBuf>,
 }
 
@@ -90,13 +114,6 @@ impl From<AlgorithmArg> for hash_hunter::Algorithm {
 /// parsed, if the search fails, or if output cannot be written.
 fn main() -> std::io::Result<()> {
     let cli = Cli::parse();
-    if cli.hash.is_none() && cli.batch.is_none() {
-        return Err(std::io::Error::new(
-            std::io::ErrorKind::InvalidInput,
-            "--hash is required unless --batch is provided",
-        ));
-    }
-
     let targets = if let Some(batch_path) = cli.batch.as_ref() {
         hash_hunter::load_batch(batch_path)?
     } else {
