@@ -1,6 +1,14 @@
+# Real Time Note Taker
+
+[![Crates.io](https://img.shields.io/crates/v/hash-hunter.svg)](https://crates.io/crates/hash-hunter)
+[![Documentation](https://docs.rs/hash-hunter/badge.svg)](https://docs.rs/hash-hunter)
+[![CI](https://github.com/Data-Forge-Solutions/hash-hunter/actions/workflows/CI.yml/badge.svg)](https://github.com/Data-Forge-Solutions/hash-hunter/actions)
+[![License](https://img.shields.io/crates/l/hash-hunter)](LICENSE)
+[![GitHub](https://img.shields.io/github/stars/Data-Forge-Solutions/hash-hunter?style=social)](https://github.com/Data-Forge-Solutions/hash-hunter)
+
 # Hash-Hunter
 
-Hash-Hunter is a Rust CLI and library for locating files by cryptographic hash.
+hash-hunter is a Rust CLI and library for locating files by cryptographic hash.
 It supports common algorithms, optional name matching to avoid unnecessary
 hashing, and batch searches for multiple targets.
 
