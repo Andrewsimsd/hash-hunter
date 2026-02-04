@@ -108,13 +108,16 @@ pub fn search(config: &SearchConfig) -> io::Result<SearchReport> {
     }
 
     if let Some(threads) = config.threads {
+        status_message(&format!("configuring {threads} hashing threads"));
         rayon::ThreadPoolBuilder::new()
             .num_threads(threads)
             .build_global()
             .map_err(io::Error::other)?;
     }
 
+    status_message("preparing targets");
     let (name_map, hash_only) = split_targets(&config.targets);
+    status_message("scanning directory tree");
     let search_root = config.dir.canonicalize()?;
 
     let file_paths: Vec<PathBuf> = WalkDir::new(&search_root)
@@ -126,6 +129,10 @@ pub fn search(config: &SearchConfig) -> io::Result<SearchReport> {
         .map(|entry| entry.path().to_path_buf())
         .collect();
 
+    status_message(&format!(
+        "found {} file(s); hashing in progress",
+        file_paths.len()
+    ));
     let progress = progress_bar(file_paths.len());
     let results = file_paths
         .par_iter()
@@ -161,6 +168,7 @@ pub fn search(config: &SearchConfig) -> io::Result<SearchReport> {
         .collect::<Vec<_>>();
     progress.finish_with_message("scan complete");
 
+    status_message("summarizing results");
     let mut output = Vec::new();
     let mut failures = Vec::new();
     let mut total_files_checked = 0usize;
@@ -191,6 +199,12 @@ pub fn search(config: &SearchConfig) -> io::Result<SearchReport> {
         total_files_checked,
         failed_files: failures,
     })
+}
+
+fn status_message(message: &str) {
+    if io::stderr().is_terminal() {
+        eprintln!("{message}");
+    }
 }
 
 fn progress_bar(total_files: usize) -> ProgressBar {
